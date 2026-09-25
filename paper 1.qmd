@@ -1,0 +1,248 @@
+---
+title: "County Revenues and Diabetes-Related Health Outcomes"
+subtitle: "County Revenues Per Capita and Diabetes Composite Rates in California, 2022"
+author: "Elaine Li"
+thanks: "Project repository available at: [https://github.com/seynLi77/MATH261A-Project1-Diabetes](https://github.com/seynLi77/MATH261A-Project1-Diabetes)."
+date: today
+date-format: long
+abstract: "Diabetes is a major public health concern, and socioeconomic factors may be associated with differences in diabetes rates. This study examines the relationship between median adjusted gross income and Diabetes Composite observed rates across California counties. We combined 2022 county-level diabetes hospitalization data with 2022 median income data from the California Franchise Tax Board. A simple linear regression model was used to evaluate the association between income and diabetes rates across 58 counties. The results showed a statistically significant negative relationship between median income and diabetes rates. These findings suggest that higher-income counties tend to have lower Diabetes Composite observed rates. However, because this was an observational county-level analysis, the results demonstrate an association rather than a causal relationship."
+format: pdf
+#bibliography: references.bib
+number-sections: true
+---
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+# load libraries
+library(readr)
+library(dplyr)
+library(ggplot2) 
+library(ggpubr)
+
+#Read data from CSV
+diabetes <- read_csv(
+  "ca-hcai-preventablehospitalizations-county_2005-2024.csv",
+  show_col_types = FALSE
+)
+
+income <- read_csv(
+  "2023-b-6-comparison-by-county.csv",
+  show_col_types = FALSE
+)
+```
+
+
+# Introduction
+
+Diabetes is a major public health issue in the United States. According to the Centers for Disease Control and Prevention (CDC), an estimated 40.1 million people in the United States had diabetes in 2023, representing approximately 12.0% of the U.S. population. Diet, physical activity, and lifestyle are some of the factors commonly associated with diabetes. In this project, we focus on income as a socioeconomic factor and examine its relationship with diabetes rates across counties in California in 2022. Specifically, we use linear regression analysis to investigate whether differences in median adjusted gross income are associated with differences in county-level diabetes rates.
+
+Our research question is:
+
+Is median adjusted gross income associated with diabetes rates across California counties?
+
+We hypothesize that counties with higher median adjusted gross income will have lower diabetes rates. Therefore, we expect to observe a negative relationship between income and diabetes rates across California counties.
+
+@sec-data introduces the data used in this analysis. @sec-methods describes the model.
+
+# Data {#sec-data}
+
+```{r scatter}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-cap: "Scatter plot of Median Income, in US dollar (x-axis) and Diabetes Composite Observed Rate per 100,000 population (y-axis) with fitted linear regression model."
+
+#Data cleaning before regression
+
+#Keep 2022, diabetes composite, county and Median Income
+diabetes_2022 <- diabetes |>
+  filter(
+    Year == 2022,
+    PQIDescription == "Diabetes Composite"
+  ) |>
+  select(
+    County,
+    ObsRate_ICD10
+  )
+
+income_2022 <- income |>
+    filter(
+    `Taxable Year` == 2022,
+  ) |>
+  select(
+    County,
+    "Median Income"
+  )
+
+regression_data <- diabetes_2022 |>
+  inner_join(
+    income_2022,
+    by = c("County" = "County")
+  )
+lm_fit <- lm(`Median Income` ~ ObsRate_ICD10, data = regression_data)
+
+intercept <- coef(lm_fit)[1]
+slope <- coef(lm_fit)[2]
+
+equation <- paste0(
+  "y = ",
+  round(intercept, 2),
+  ifelse(slope >= 0, " + ", " - "),
+  round(abs(slope), 2),
+  "x"
+)
+
+#Graphing scatter plot
+ggplot(
+  regression_data,
+  aes(
+    x = `Median Income`,
+    y = ObsRate_ICD10
+  )
+) +
+  geom_point(
+    color = "steelblue",
+    size = 2,
+    alpha = 0.7
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    color = "darkred"
+  ) +
+  annotate(
+    "text",
+    x = Inf,
+    y = 250,
+    label = equation,
+    hjust = 1.1,
+    vjust = 1.5,
+    size = 5,
+    color = "black"
+  ) +
+  labs(
+    title = "Median Income vs. Diabetes Composite Rates",
+    x = "Median Income",
+    y = "Diabetes Composite Observed Rate per 100,000"
+  ) +
+  theme_minimal()
+```
+
+The `2023-b-6-comparison-by-county.csv` provides data personal income tax statistics for taxpayers by the county of residence based on their taxreturns.These data were collected annually by California Franchise Tax Board. Each row of data describes the tax income of a California county in a given year. My analysis focuses on the `Median Income` variable for 2022 in the dataset, which represents median adjusted gross income for taxable and non-taxable returns for all filing statuses.
+
+The `ca-hcai-preventablehospitalizations-county_2005-2024.csv` provides hospitalization counts and rates, statewide and by county, for 10 ambulatory care sensitive conditions plus 4 composite measures. These data were collected by the California Department of Health Care Access and Information (HCAI). Hospitalizations due to these medical conditions are potentially preventable through access to high-quality outpatient care. Each row of data describes the hospitalization information for a California county in a given year. My analysis focuses on `Diabetes Composite` under `PQIDescription` column and `ObsRate_ICD10` for 2022 in the dataset. It represents the rate of diabetes-related hospitalizations for each county in California in 2022, per 100,000 population.
+
+The @scatter suggests a moderate negative relationship between median income and diabetes rates.
+
+# Methods {#sec-methods}
+
+We fit a simple linear regression model to examine the relationship between median adjusted gross income and diabetes rates across California counties:
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i
+$$
+
+In this model, the intercept $\beta_0$ represents the predicted diabetes rate when median adjusted gross income is zero. The slope $\beta_1$ represents the expected change in the diabetes rate associated with a one-dollar increase in median adjusted gross income. A negative value of $\beta_1$ indicates that counties with higher median income tend to have lower diabetes rates.
+
+The analysis used county-level data from 2022. Counties were matched by name, and only counties with available observations in both datasets were included, resulting in 58 counties. We implemented the analysis in R using the `lm()` function [@R_language].
+
+# Results {#sec-results}
+
+```{r lm}
+#| echo: false
+#| warning: false
+#| message: false
+
+intercept <- coef(lm_fit)[1]
+slope <- coef(lm_fit)[2]
+
+t_stat <- summary(lm_fit)$coefficients[2, "t value"]
+
+p_value <- summary(lm_fit)$coefficients[2, "Pr(>|t|)"]
+
+ci <- confint(lm_fit, level = 0.95)[2, ]
+
+```
+
+The estimated slope parameter is
+$b_1=$ `r round(coef(lm_fit)[2], 5)`.
+This means that a one-dollar increase in median adjusted gross income is associated with an estimated decrease of approximately `r round(abs(coef(lm_fit)[2]), 5)` units in the Diabetes Composite observed rate per 100,000 population.
+
+The estimated intercept is
+$b_0=$ `r round(coef(lm_fit)[1], 2)`.
+This represents the predicted Diabetes Composite observed rate when median adjusted gross income equals zero. However, because an income of zero is outside the meaningful range of the data, the intercept is mainly a mathematical component of the regression equation.
+
+```{r residual}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-cap: "Scatter plot of fitted values (x-axis) and residuals (y-axis) for a simple linear regression with body mass (g) as the response and flipper length (mm) as the predictor."
+residual_data <- regression_data |>
+  mutate(
+    fitted_values = fitted(lm_fit),
+    residuals = resid(lm_fit)
+  )
+
+ggplot(
+  residual_data,
+  aes(
+    x = fitted_values,
+    y = residuals
+  )
+) +
+  geom_point(
+    color = "steelblue",
+    size = 2,
+    alpha = 0.7
+  ) +
+  geom_hline(
+    yintercept = 0,
+    color = "darkred",
+    linewidth = 1
+  ) +
+  labs(
+    title = "Residual Plot",
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_minimal()
+```
+
+We use a two-sided t-test to compare the null hypothesis
+$H_0: \beta_1 = 0$
+with the alternative hypothesis
+$H_A: \beta_1 \neq 0$.
+
+The estimated slope is
+$b_1 = $ `r round(slope, 5)`.
+The test statistic is
+$t = $ `r round(t_stat, 2)`,
+with a p-value of
+`r format.pval(p_value, digits = 3)`.
+
+The 95% confidence interval for the slope is
+(`r round(ci[1], 5)`, `r round(ci[2], 5)`).
+Because the p-value is less than 0.05 and the confidence interval does not include zero, we reject the null hypothesis that $\beta_1 = 0$. This provides evidence of a statistically significant association between median adjusted gross income and the Diabetes Composite observed rate.
+
+The scatter plot in Figure @scatter suggests an approximately negative linear relationship between the two variables. However, the scatter plot alone cannot fully assess all regression assumptions. Therefore, residual plots should also be examined to evaluate the assumptions of constant variance and normality.
+
+# Discussion {#sec-discussion}
+
+This analysis addresses our research question by testing whether median adjusted gross income is associated with diabetes rates across California counties. The regression results show a statistically significant negative relationship: counties with higher median adjusted gross income tend to have lower Diabetes Composite observed rates. Therefore, the results support our hypothesis.
+
+A possible explanation for this result is that people in higher-income counties may pay more attention to healthy diets and lifestyles. Another possible factor is that higher-income areas may have better access to healthcare resources, allowing people to detect and control health problems earlier.
+
+One limitation is the presence of outliers. For example, `Alpine` County has a diabetes rate of `0.0` while its median income is `$49,293`. This may be related to its very small population, or there may be limitations in the available data. There are also counties such as `Modoc` County that have both relatively low income and a relatively low diabetes rate, which does not follow the overall negative relationship.
+
+Another limitation is that this is a county-level analysis. The relationship observed at the county level does not necessarily mean that individuals with higher incomes are less likely to have diabetes. Other factors may differ across counties and could help explain the relationship.
+
+For the next step, I would like to collect individual-level data on income and diabetes status for a more detailed analysis. This would also allow us to use more advanced statistical models to better fit the data and examine the relationship between income and diabetes at the individual level.
+
+# References
+California Franchise Tax Board. “B-6, Comparison by County.” California Open Data, 15 Oct. 2024, https://data.ca.gov/dataset/b-6-comparison-by-county2. Accessed 25 Sept. 2026. 
+
+California Department of Health Care Access and Information. “Rates of Preventable Hospitalizations for Selected Medical Conditions by County (LGHC Indicator).” California Open Data, 17 Sept. 2026, https://data.ca.gov/dataset/rates-of-preventable-hospitalizations-for-selected-medical-conditions-by-county-lghc-indicator. Accessed 25 Sept. 2026.
+
+Centers for Disease Control and Prevention. “National Diabetes Statistics Report.” CDC, 16 Sept. 2026, https://www.cdc.gov/diabetes/php/data-research/index.html. Accessed 25 Sept. 2026.
