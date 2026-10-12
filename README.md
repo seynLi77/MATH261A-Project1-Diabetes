@@ -24,8 +24,8 @@ The diabetes dataset provides the `Diabetes Composite` observed hospitalization 
 ```text
 .
 ├── README.md
-├── paper-1.qmd
-├── paper-1.pdf
+├── paper-1 ver2.0.qmd
+├── paper-1 ver2.0.pdf
 ├── diabetes-scatter.png
 ├── diabetes-residual.png
 └── diabetes-qqplot.png
