@@ -102,7 +102,7 @@ install.packages(c("readr", "dplyr", "ggplot2", "knitr"))
 3. Open a terminal in the repository directory and render the Quarto report:
 
 ```bash
-quarto render report.qmd
+quarto render paper-1 ver2.0.qmd
 ```
 
 4. Quarto will generate the PDF report and execute the R code contained in the document.
