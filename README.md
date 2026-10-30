@@ -24,8 +24,8 @@ The diabetes dataset provides the `Diabetes Composite` observed hospitalization 
 ```text
 .
 ├── README.md
-├── paper-1 ver2.0.qmd
-├── paper-1 ver2.0.pdf
+├── paper-1 ver3.0.qmd
+├── paper-1 ver3.0.pdf
 ├── diabetes-scatter.png
 ├── diabetes-residual.png
 └── diabetes-qqplot.png
@@ -114,6 +114,10 @@ The statistical analysis was conducted in R. The report was written and rendered
 ## Author
 
 Elaine Li
+
+## External Resources
+
+ChatGPT(EDU)
 
 ## Acknowledgments
 This project repository is based on the template provided by Rohan Alexander.
